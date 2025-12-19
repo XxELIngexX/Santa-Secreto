@@ -98,7 +98,7 @@ export default async function handler(req, res) {
         const password = req.body?.password || req.query?.password;
         
         // Contraseña de admin
-        if (password !== 'admin123') {
+        if (password !== 'FelizNavidad') {
             return res.status(401).json({
                 success: false,
                 error: 'Contraseña incorrecta'
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
     if (action === 'resultados') {
         const password = req.body?.password || req.query?.password;
         
-        if (password !== 'admin123') {
+        if (password !== 'FelizNavidad') {
             return res.status(401).json({
                 success: false,
                 error: 'Contraseña incorrecta'
