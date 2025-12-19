@@ -10,25 +10,32 @@ for (let i = 0; i < 50; i++) {
     document.body.appendChild(snowflake);
 }
 
-// Base de datos de participantes (los que pueden consultar)
-const participantes = ['Cesar', 'Ana', 'Santiago', 'Oscar', 'Anyelo', 'Yolima'];
+// Base de datos inicial
+const todosLosParticipantes = ['Cesar', 'Ana', 'Santiago', 'Oscar', 'Anyelo', 'Yolima'];
 
-// Función para obtener disponibles (los que aún pueden ser elegidos)
+// Función para obtener participantes que aún NO han sorteado
+function obtenerParticipantesRestantes() {
+    const yaHicieronSorteo = JSON.parse(localStorage.getItem('santaSecretoYaHicieron') || '[]');
+    return todosLosParticipantes.filter(p => !yaHicieronSorteo.includes(p));
+}
+
+// Función para obtener disponibles (los que pueden ser elegidos)
 function obtenerDisponibles() {
-    const yaAsignados = JSON.parse(localStorage.getItem('santaSecretoAsignados') || '[]');
-    return participantes.filter(p => !yaAsignados.includes(p));
+    const yaFueronElegidos = JSON.parse(localStorage.getItem('santaSecretoYaElegidos') || '[]');
+    return todosLosParticipantes.filter(p => !yaFueronElegidos.includes(p));
 }
 
 // Función para inicializar el sistema
 function inicializarSorteo() {
     // Verificar si ya existe un sorteo en progreso
-    const asignados = localStorage.getItem('santaSecretoAsignados');
+    const yaHicieron = localStorage.getItem('santaSecretoYaHicieron');
     
-    if (!asignados) {
-        // Inicializar lista vacía de asignados
-        localStorage.setItem('santaSecretoAsignados', JSON.stringify([]));
+    if (!yaHicieron) {
+        // Inicializar listas vacías
+        localStorage.setItem('santaSecretoYaHicieron', JSON.stringify([]));
+        localStorage.setItem('santaSecretoYaElegidos', JSON.stringify([]));
         localStorage.setItem('santaSecretoResultados', JSON.stringify({}));
-        console.log('Sistema inicializado - Listo para sorteo');
+        console.log('Sistema inicializado');
     } else {
         console.log('Sorteo en progreso cargado');
     }
@@ -52,13 +59,13 @@ function realizarSorteo() {
     const tuNombre = select.value;
     
     // Verificar si esta persona ya hizo el sorteo
-    const resultados = JSON.parse(localStorage.getItem('santaSecretoResultados') || '{}');
+    const yaHicieron = JSON.parse(localStorage.getItem('santaSecretoYaHicieron') || '[]');
     
-    if (resultados[tuNombre]) {
+    if (yaHicieron.includes(tuNombre)) {
         // Ya hizo el sorteo, mostrar su resultado guardado
+        const resultados = JSON.parse(localStorage.getItem('santaSecretoResultados') || '{}');
         amigoAsignado = resultados[tuNombre];
         
-        // Mostrar resultado
         amigoSecreto.textContent = amigoAsignado;
         resultado.style.display = 'block';
         
@@ -66,14 +73,14 @@ function realizarSorteo() {
         return;
     }
     
-    // Obtener lista de disponibles
+    // Obtener lista de disponibles para ser elegidos
     let disponibles = obtenerDisponibles();
     
     // Filtrar para que no te toque a ti mismo
     disponibles = disponibles.filter(p => p !== tuNombre);
     
     if (disponibles.length === 0) {
-        alert('⚠️ Ya no hay personas disponibles para el sorteo');
+        alert('⚠️ Ya no hay personas disponibles para el sorteo. Solo quedas tú.');
         return;
     }
     
@@ -82,13 +89,18 @@ function realizarSorteo() {
     amigoAsignado = disponibles[indiceAleatorio];
     
     // Guardar resultado
+    const resultados = JSON.parse(localStorage.getItem('santaSecretoResultados') || '{}');
     resultados[tuNombre] = amigoAsignado;
     localStorage.setItem('santaSecretoResultados', JSON.stringify(resultados));
     
-    // Marcar como asignado
-    const yaAsignados = JSON.parse(localStorage.getItem('santaSecretoAsignados') || '[]');
-    yaAsignados.push(amigoAsignado);
-    localStorage.setItem('santaSecretoAsignados', JSON.stringify(yaAsignados));
+    // Eliminar a la persona elegida de disponibles
+    const yaElegidos = JSON.parse(localStorage.getItem('santaSecretoYaElegidos') || '[]');
+    yaElegidos.push(amigoAsignado);
+    localStorage.setItem('santaSecretoYaElegidos', JSON.stringify(yaElegidos));
+    
+    // Eliminar a quien hizo el sorteo de participantes
+    yaHicieron.push(tuNombre);
+    localStorage.setItem('santaSecretoYaHicieron', JSON.stringify(yaHicieron));
     
     // Animación del regalo
     const giftIcon = document.querySelector('.gift-icon');
@@ -103,7 +115,8 @@ function realizarSorteo() {
         resultado.style.display = 'block';
     }, 500);
     
-    console.log(`Quedan ${obtenerDisponibles().length} personas disponibles`);
+    console.log(`Participantes restantes: ${obtenerParticipantesRestantes().join(', ')}`);
+    console.log(`Disponibles para elegir: ${obtenerDisponibles().join(', ')}`);
 }
 
 function enviarWhatsApp() {
@@ -122,32 +135,32 @@ function enviarWhatsApp() {
     window.open(urlWhatsApp, '_blank');
 }
 
-// Función para reiniciar el sorteo (útil para testing o nuevo año)
-// Escribe en la consola: reiniciarSorteo()
+// Función para reiniciar el sorteo
 function reiniciarSorteo() {
     if (confirm('⚠️ ¿Estás seguro? Esto borrará TODOS los sorteos y empezará desde cero')) {
-        localStorage.removeItem('santaSecretoAsignados');
+        localStorage.removeItem('santaSecretoYaHicieron');
+        localStorage.removeItem('santaSecretoYaElegidos');
         localStorage.removeItem('santaSecretoResultados');
         location.reload();
     }
 }
 
 // Función para ver el estado actual
-// Escribe en la consola: verEstado()
 function verEstado() {
     const resultados = JSON.parse(localStorage.getItem('santaSecretoResultados') || '{}');
+    const participantesRestantes = obtenerParticipantesRestantes();
     const disponibles = obtenerDisponibles();
     
     console.log('=== ESTADO DEL SORTEO ===');
     console.log('\n📋 Sorteos realizados:');
     for (let persona in resultados) {
-        console.log(`   ${persona} → ${resultados[persona]}`);
+        console.log(`   ${persona} → regala a → ${resultados[persona]}`);
     }
-    console.log(`\n✅ Total de sorteos: ${Object.keys(resultados).length}/${participantes.length}`);
-    console.log(`\n🎯 Aún disponibles para ser elegidos: ${disponibles.join(', ')}`);
+    console.log(`\n👥 Participantes que AÚN NO han sorteado (${participantesRestantes.length}): ${participantesRestantes.join(', ') || 'Ninguno'}`);
+    console.log(`\n🎯 Disponibles para ser elegidos (${disponibles.length}): ${disponibles.join(', ') || 'Ninguno'}`);
     console.log('\n========================');
 }
 
 console.log('💡 Comandos disponibles en consola:');
-console.log('   - verEstado() : Ver quién ha hecho sorteo y quiénes están disponibles');
+console.log('   - verEstado() : Ver quién ha hecho sorteo y quiénes quedan disponibles');
 console.log('   - reiniciarSorteo() : Empezar sorteo desde cero');
