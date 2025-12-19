@@ -50,19 +50,10 @@ async function realizarSorteo() {
         if (!data.success) {
             alert('❌ ' + data.error);
             
-            // Si ya sorteó, mostrar su resultado
-            if (data.resultado) {
-                nombreUsuario = nombre;
-                amigoAsignado = data.resultado;
-                amigoSecreto.textContent = amigoAsignado;
-                resultado.style.display = 'block';
-                select.disabled = true;
-                boton.disabled = true;
-                boton.textContent = '✅ Ya Sorteaste';
-            } else {
-                boton.disabled = false;
-                boton.textContent = '🎲 Realizar Sorteo';
-            }
+            // NO mostrar resultado de otra persona por seguridad
+            // Si ya sorteó, solo deshabilitar el botón
+            boton.disabled = false;
+            boton.textContent = '🎲 Realizar Sorteo';
             return;
         }
         

@@ -59,8 +59,7 @@ export default async function handler(req, res) {
         if (sorteoData.yaHicieronSorteo.includes(nombreLimpio)) {
             return res.status(400).json({
                 success: false,
-                error: 'Ya realizaste tu sorteo',
-                resultado: sorteoData.resultados[nombreLimpio]
+                error: 'Ya realizaste tu sorteo. Si olvidaste quién te salió, revisa tu mensaje de WhatsApp.'
             });
         }
 
