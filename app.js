@@ -10,64 +10,27 @@ for (let i = 0; i < 50; i++) {
     document.body.appendChild(snowflake);
 }
 
-// Base de datos de participantes
+// Base de datos de participantes (los que pueden consultar)
 const participantes = ['Cesar', 'Ana', 'Santiago', 'Oscar', 'Anyelo', 'Yolima'];
 
-// Asignaciones fijas del sorteo
-let asignaciones = {};
-
-// Función para generar el sorteo de manera justa (cadena cerrada)
-function generarSorteo() {
-    // Crear una copia y mezclar aleatoriamente
-    let mezclados = [...participantes];
-    
-    // Algoritmo Fisher-Yates para mezclar
-    for (let i = mezclados.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [mezclados[i], mezclados[j]] = [mezclados[j], mezclados[i]];
-    }
-    
-    // Crear cadena: cada persona le regala a la siguiente
-    asignaciones = {};
-    let esValido = true;
-    
-    for (let i = 0; i < participantes.length; i++) {
-        let persona = participantes[i];
-        let siguiente = mezclados[(i + 1) % mezclados.length];
-        
-        // Verificar que no se regale a sí mismo
-        if (persona === siguiente) {
-            esValido = false;
-            break;
-        }
-        
-        asignaciones[persona] = siguiente;
-    }
-    
-    // Si alguien se regaló a sí mismo, reintentar
-    if (!esValido) {
-        return generarSorteo();
-    }
-    
-    return asignaciones;
+// Función para obtener disponibles (los que aún pueden ser elegidos)
+function obtenerDisponibles() {
+    const yaAsignados = JSON.parse(localStorage.getItem('santaSecretoAsignados') || '[]');
+    return participantes.filter(p => !yaAsignados.includes(p));
 }
 
-// Cargar o generar el sorteo
+// Función para inicializar el sistema
 function inicializarSorteo() {
-    // Intentar cargar sorteo guardado
-    const sorteoGuardado = localStorage.getItem('santaSecretoSorteo');
-    const yaVieron = localStorage.getItem('santaSecretoVistos');
+    // Verificar si ya existe un sorteo en progreso
+    const asignados = localStorage.getItem('santaSecretoAsignados');
     
-    if (sorteoGuardado) {
-        asignaciones = JSON.parse(sorteoGuardado);
-        console.log('Sorteo cargado desde almacenamiento');
+    if (!asignados) {
+        // Inicializar lista vacía de asignados
+        localStorage.setItem('santaSecretoAsignados', JSON.stringify([]));
+        localStorage.setItem('santaSecretoResultados', JSON.stringify({}));
+        console.log('Sistema inicializado - Listo para sorteo');
     } else {
-        // Generar nuevo sorteo
-        generarSorteo();
-        // Guardar en localStorage para que persista
-        localStorage.setItem('santaSecretoSorteo', JSON.stringify(asignaciones));
-        localStorage.setItem('santaSecretoVistos', JSON.stringify({}));
-        console.log('Nuevo sorteo generado y guardado');
+        console.log('Sorteo en progreso cargado');
     }
 }
 
@@ -86,23 +49,48 @@ function realizarSorteo() {
         return;
     }
     
-    // Verificar si esta persona ya vio su resultado
-    const yaVieron = JSON.parse(localStorage.getItem('santaSecretoVistos') || '{}');
+    const tuNombre = select.value;
     
-    if (yaVieron[select.value]) {
-        if (!confirm('⚠️ Ya consultaste tu Santa Secreto. ¿Quieres verlo nuevamente?')) {
-            return;
-        }
+    // Verificar si esta persona ya hizo el sorteo
+    const resultados = JSON.parse(localStorage.getItem('santaSecretoResultados') || '{}');
+    
+    if (resultados[tuNombre]) {
+        // Ya hizo el sorteo, mostrar su resultado guardado
+        amigoAsignado = resultados[tuNombre];
+        
+        // Mostrar resultado
+        amigoSecreto.textContent = amigoAsignado;
+        resultado.style.display = 'block';
+        
+        alert('ℹ️ Ya habías realizado tu sorteo. Este es tu resultado guardado.');
+        return;
     }
     
-    // Obtener la asignación del participante
-    amigoAsignado = asignaciones[select.value];
+    // Obtener lista de disponibles
+    let disponibles = obtenerDisponibles();
     
-    // Marcar como visto
-    yaVieron[select.value] = true;
-    localStorage.setItem('santaSecretoVistos', JSON.stringify(yaVieron));
+    // Filtrar para que no te toque a ti mismo
+    disponibles = disponibles.filter(p => p !== tuNombre);
     
-    // Animación del regalo girando
+    if (disponibles.length === 0) {
+        alert('⚠️ Ya no hay personas disponibles para el sorteo');
+        return;
+    }
+    
+    // Seleccionar aleatoriamente
+    const indiceAleatorio = Math.floor(Math.random() * disponibles.length);
+    amigoAsignado = disponibles[indiceAleatorio];
+    
+    // Guardar resultado
+    resultados[tuNombre] = amigoAsignado;
+    localStorage.setItem('santaSecretoResultados', JSON.stringify(resultados));
+    
+    // Marcar como asignado
+    const yaAsignados = JSON.parse(localStorage.getItem('santaSecretoAsignados') || '[]');
+    yaAsignados.push(amigoAsignado);
+    localStorage.setItem('santaSecretoAsignados', JSON.stringify(yaAsignados));
+    
+    // Animación del regalo
     const giftIcon = document.querySelector('.gift-icon');
     giftIcon.style.animation = 'none';
     setTimeout(() => {
@@ -114,6 +102,8 @@ function realizarSorteo() {
         amigoSecreto.textContent = amigoAsignado;
         resultado.style.display = 'block';
     }, 500);
+    
+    console.log(`Quedan ${obtenerDisponibles().length} personas disponibles`);
 }
 
 function enviarWhatsApp() {
@@ -132,26 +122,32 @@ function enviarWhatsApp() {
     window.open(urlWhatsApp, '_blank');
 }
 
-// Función para reiniciar el sorteo (útil para testing)
+// Función para reiniciar el sorteo (útil para testing o nuevo año)
 // Escribe en la consola: reiniciarSorteo()
 function reiniciarSorteo() {
-    if (confirm('⚠️ ¿Estás seguro? Esto borrará el sorteo actual y generará uno nuevo')) {
-        localStorage.removeItem('santaSecretoSorteo');
-        localStorage.removeItem('santaSecretoVistos');
+    if (confirm('⚠️ ¿Estás seguro? Esto borrará TODOS los sorteos y empezará desde cero')) {
+        localStorage.removeItem('santaSecretoAsignados');
+        localStorage.removeItem('santaSecretoResultados');
         location.reload();
     }
 }
 
-// Función para ver todas las asignaciones (solo para admin/debug)
-// Escribe en la consola: verTodasAsignaciones()
-function verTodasAsignaciones() {
-    console.log('=== ASIGNACIONES DEL SORTEO ===');
-    for (let persona in asignaciones) {
-        console.log(`${persona} → ${asignaciones[persona]}`);
+// Función para ver el estado actual
+// Escribe en la consola: verEstado()
+function verEstado() {
+    const resultados = JSON.parse(localStorage.getItem('santaSecretoResultados') || '{}');
+    const disponibles = obtenerDisponibles();
+    
+    console.log('=== ESTADO DEL SORTEO ===');
+    console.log('\n📋 Sorteos realizados:');
+    for (let persona in resultados) {
+        console.log(`   ${persona} → ${resultados[persona]}`);
     }
-    console.log('================================');
+    console.log(`\n✅ Total de sorteos: ${Object.keys(resultados).length}/${participantes.length}`);
+    console.log(`\n🎯 Aún disponibles para ser elegidos: ${disponibles.join(', ')}`);
+    console.log('\n========================');
 }
 
 console.log('💡 Comandos disponibles en consola:');
-console.log('   - reiniciarSorteo() : Genera un nuevo sorteo');
-console.log('   - verTodasAsignaciones() : Muestra todas las parejas (¡cuidado, spoilers!)');
+console.log('   - verEstado() : Ver quién ha hecho sorteo y quiénes están disponibles');
+console.log('   - reiniciarSorteo() : Empezar sorteo desde cero');
