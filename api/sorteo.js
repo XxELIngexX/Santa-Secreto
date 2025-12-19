@@ -1,8 +1,7 @@
 // Vercel Serverless Function para manejar el sorteo
 // Ahora sin códigos - solo por nombre
 
-const TODOS_PARTICIPANTES = ['Cesar', 'Ana', 'Santiago', 'Oscar', 'Anyelo', 'Yolima'];
-
+const TODOS_PARTICIPANTES = ['Cesar', 'Oscar','Miryam', 'Sammuel', 'Ana', 'Anyelo', 'Yolima', 'Ginna', 'Santiago', 'Margi'];
 // Simulación de persistencia en memoria
 // En producción real, usar una DB
 let sorteoData = {
