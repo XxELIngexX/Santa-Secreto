@@ -189,7 +189,7 @@ async function verResultados() {
     }
 }
 
-console.log('💡 Comandos disponibles en consola:');
-console.log('   - verEstado() : Ver el estado del sorteo');
-console.log('   - reiniciarSorteo() : Reiniciar sorteo (password: admin123)');
-console.log('   - verResultados() : Ver TODOS los resultados [SPOILERS] (password: admin123)');
+// console.log('💡 Comandos disponibles en consola:');
+// console.log('   - verEstado() : Ver el estado del sorteo');
+// console.log('   - reiniciarSorteo() : Reiniciar sorteo (password: admin123)');
+// console.log('   - verResultados() : Ver TODOS los resultados [SPOILERS] (password: admin123)');
