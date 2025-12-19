@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎅 Santa Secreto - Sorteo Navideño</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="container">
+        <div class="stars">✨🎄✨</div>
+        
+        <h1>🎅 Santa Secreto 🎁</h1>
+        <p class="subtitle">¡Descubre a quién le darás tu regalo!</p>
+        
+        <div class="gift-icon">🎁</div>
+        
+        <div class="select-container">
+            <label for="participante">Selecciona tu nombre:</label>
+            <select id="participante">
+                <option value="">-- Elige tu nombre --</option>
+                <option value="Cesar">Cesar</option>
+                <option value="Ana">Ana</option>
+                <option value="Santiago">Santiago</option>
+                <option value="Oscar">Oscar</option>
+                <option value="Anyelo">Anyelo</option>
+                <option value="Yolima">Yolima</option>
+            </select>
+        </div>
+        
+        <button class="button" onclick="realizarSorteo()">🎲 Realizar Sorteo</button>
+        
+        <div class="result" id="resultado">
+            <h2>🎉 ¡Tu Santa Secreto es! 🎉</h2>
+            <p id="amigoSecreto"></p>
+            <button class="whatsapp-btn" onclick="enviarWhatsApp()">
+                📱 Enviar por WhatsApp
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
