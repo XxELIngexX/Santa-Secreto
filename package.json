@@ -1,0 +1,10 @@
+{
+  "name": "santa-secreto",
+  "version": "1.0.0",
+  "scripts": {
+    "vercel": "vercel dev"        
+  },
+  "dependencies": {
+    "pg": "^8.11.0"
+  }
+}
