@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'eec2-44-222-192-17.compute-1.amazonaws.com',
+  host: process.env.DB_HOST || 'ec2-3-229-118-156.compute-1.amazonaws.com',
   database: process.env.DB_NAME || 'santasecreto',
   user: process.env.DB_USER || 'santa',
   password: process.env.DB_PASSWORD || 'secreto',
