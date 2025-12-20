@@ -1,21 +1,22 @@
-// api/index.js
 const express = require('express');
 const { Pool } = require('pg');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
 const pool = new Pool({
-  host: process.env.DB_HOST || '34.204.168.184',
-  database: process.env.DB_NAME || 'santasecreto',
-  user: process.env.DB_USER || 'santa',
-  password: process.env.DB_PASSWORD || 'secreto',
-  port: process.env.DB_PORT || 5432,
+  host: '34.204.168.184',
+  database: 'santasecreto',
+  user: 'santa',
+  password: 'secreto',
+  port: 5432,
   ssl: { rejectUnauthorized: false }
 });
 
 app.get('/api/sorteo', async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
   const result = await pool.query('SELECT p.*, asignado.nombre as asignado_a_nombre FROM participantes p LEFT JOIN participantes asignado ON p.asignado_a_id = asignado.id ORDER BY p.nombre');
   const participantes = result.rows;
   res.json({
@@ -30,7 +31,6 @@ app.get('/api/sorteo', async (req, res) => {
 });
 
 app.post('/api/sorteo', async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
   const { action, nombre, password } = req.body;
   
   if (action === 'sortear') {
@@ -52,4 +52,4 @@ app.post('/api/sorteo', async (req, res) => {
   }
 });
 
-module.exports = app;
+app.listen(3000, () => console.log('✅ http://localhost:3000'));
