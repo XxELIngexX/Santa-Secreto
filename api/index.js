@@ -1,5 +1,20 @@
+// api/index.js
+const express = require('express');
 const { Pool } = require('pg');
 
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  next();
+});
+
+// PostgreSQL
 const pool = new Pool({
   host: process.env.DB_HOST || '34.204.168.184',
   database: process.env.DB_NAME || 'santasecreto',
@@ -11,20 +26,15 @@ const pool = new Pool({
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'FelizNavidad';
 
-module.exports = async (req, res) => {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// ========================================
+// RUTAS
+// ========================================
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
+// GET /api/sorteo?action=estado
+app.get('/sorteo', async (req, res) => {
   try {
-    const action = req.method === 'GET' ? req.query.action : req.body?.action;
+    const { action, nombre } = req.query;
 
-    // ESTADO
     if (action === 'estado') {
       const result = await pool.query(`
         SELECT p.id, p.nombre, p.asignado_a_id, p.sorteado_en,
@@ -38,7 +48,7 @@ module.exports = async (req, res) => {
       const totalParticipantes = participantes.length;
       const totalSorteos = participantes.filter(p => p.asignado_a_id).length;
 
-      return res.status(200).json({
+      return res.json({
         success: true,
         participantes,
         totalParticipantes,
@@ -49,10 +59,20 @@ module.exports = async (req, res) => {
       });
     }
 
+    return res.status(400).json({ success: false, error: 'Acción no reconocida' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/sorteo
+app.post('/sorteo', async (req, res) => {
+  try {
+    const { action, nombre, password } = req.body;
+
     // SORTEAR
     if (action === 'sortear') {
-      const { nombre } = req.body;
-
       if (!nombre) {
         return res.status(400).json({ success: false, error: 'Nombre requerido' });
       }
@@ -67,7 +87,7 @@ module.exports = async (req, res) => {
 
       if (user.asignado_a_id) {
         const asignado = await pool.query('SELECT nombre FROM participantes WHERE id = $1', [user.asignado_a_id]);
-        return res.status(200).json({
+        return res.json({
           success: false,
           yaSorteado: true,
           asignadoA: asignado.rows[0].nombre
@@ -94,7 +114,7 @@ module.exports = async (req, res) => {
 
       const stats = await pool.query('SELECT COUNT(*) as total FROM participantes WHERE asignado_a_id IS NOT NULL');
       
-      return res.status(200).json({
+      return res.json({
         success: true,
         usuario: nombre,
         elegido: elegido.nombre,
@@ -105,21 +125,17 @@ module.exports = async (req, res) => {
 
     // REINICIAR
     if (action === 'reiniciar') {
-      const { password } = req.body;
-
       if (password !== ADMIN_PASSWORD) {
         return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
       }
 
       await pool.query('UPDATE participantes SET asignado_a_id = NULL, sorteado_en = NULL');
       
-      return res.status(200).json({ success: true, message: 'Sorteo reiniciado' });
+      return res.json({ success: true, message: 'Sorteo reiniciado' });
     }
 
     // RESULTADOS
     if (action === 'resultados') {
-      const { password } = req.body;
-
       if (password !== ADMIN_PASSWORD) {
         return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
       }
@@ -132,17 +148,15 @@ module.exports = async (req, res) => {
         ORDER BY p.sorteado_en
       `);
 
-      return res.status(200).json({ success: true, resultados: result.rows });
+      return res.json({ success: true, resultados: result.rows });
     }
 
     return res.status(400).json({ success: false, error: 'Acción no reconocida' });
-
   } catch (error) {
     console.error('Error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Error interno',
-      details: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
-};
+});
+
+// Exportar para Vercel
+module.exports = app;
