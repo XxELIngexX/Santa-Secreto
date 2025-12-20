@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const pool = new Pool({
-  host: 'ec2-98-92-82-57.compute-1.amazonaws.com',
+  host: 'ec2-100-48-20-121.compute-1.amazonaws.com',
   database: 'santasecreto',
   user: 'santa',
   password: 'secreto',
